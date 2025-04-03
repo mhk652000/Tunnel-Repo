@@ -118,32 +118,137 @@ Payload before hitting api{"branchCode":"0002","username":"tsting","password":"l
 FSM Initial State: {
   status: 'error',
   output: undefined,
-  error: TypeError: this.logic.getInitialSnapshot is not a function
-      at Actor._initState (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:597:161)
-      at new Actor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:590:10)
-      at createActor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:1083:10)
-      at /home/bahl/Desktop/TestVue/FSM/server.js:21:23
+  error: TypeError: Cannot read properties of undefined (reading 'getSnapshot')
+      at /home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/xstate.cjs.js:494:17
+      at Array.forEach (<anonymous>)
+      at StateMachine.start (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/xstate.cjs.js:493:38)
+      at Actor.start (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:835:20)
+      at /home/bahl/Desktop/TestVue/FSM/server.js:25:17
       at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
       at next (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:149:13)
       at Route.dispatch (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:119:3)
       at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
-      at /home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:284:15
-      at Function.process_params (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:346:12)
+      at /home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:284:15,
+  machine: <ref *1> StateMachine {
+    config: {
+      id: 'apiRequest',
+      initial: 'loading',
+      context: [Object],
+      states: [Object]
+    },
+    version: undefined,
+    schemas: undefined,
+    implementations: { actors: {}, actions: [Object], delays: {}, guards: {} },
+    __xstatenode: true,
+    idMap: Map(4) {
+      'apiRequest' => [StateNode],
+      'apiRequest.loading' => [StateNode],
+      'apiRequest.success' => [StateNode],
+      'apiRequest.failure' => [StateNode]
+    },
+    root: StateNode {
+      config: [Object],
+      key: 'apiRequest',
+      id: 'apiRequest',
+      type: 'compound',
+      path: [],
+      states: [Object],
+      history: false,
+      entry: [],
+      exit: [],
+      parent: undefined,
+      machine: [Circular *1],
+      meta: undefined,
+      output: undefined,
+      order: 0,
+      description: undefined,
+      tags: [],
+      transitions: Map(0) {},
+      always: undefined
+    },
+    id: 'apiRequest',
+    states: {
+      loading: [StateNode],
+      success: [StateNode],
+      failure: [StateNode]
+    },
+    events: [
+      'xstate.done.actor.0.apiRequest.loading',
+      'xstate.error.actor.0.apiRequest.loading'
+    ],
+    transition: [Function: bound transition],
+    getInitialSnapshot: [Function: bound getInitialSnapshot],
+    getPersistedSnapshot: [Function: bound getPersistedSnapshot],
+    restoreSnapshot: [Function: bound restoreSnapshot],
+    start: [Function: bound start]
+  },
+  context: { data: null, error: null, endpoint: null },
+  _nodes: [
+    StateNode {
+      config: [Object],
+      key: 'apiRequest',
+      id: 'apiRequest',
+      type: 'compound',
+      path: [],
+      states: [Object],
+      history: false,
+      entry: [],
+      exit: [],
+      parent: undefined,
+      machine: [StateMachine],
+      meta: undefined,
+      output: undefined,
+      order: 0,
+      description: undefined,
+      tags: [],
+      transitions: Map(0) {},
+      always: undefined
+    },
+    StateNode {
+      config: [Object],
+      key: 'loading',
+      id: 'apiRequest.loading',
+      type: 'atomic',
+      path: [Array],
+      states: {},
+      history: false,
+      entry: [],
+      exit: [],
+      parent: [StateNode],
+      machine: [StateMachine],
+      meta: undefined,
+      output: undefined,
+      order: 1,
+      description: undefined,
+      tags: [],
+      transitions: [Map],
+      always: undefined
+    }
+  ],
+  value: 'loading',
+  tags: Set(0) {},
+  children: { '0.apiRequest.loading': undefined },
+  historyValue: {},
+  matches: [Function: matches],
+  hasTag: [Function: hasTag],
+  can: [Function: can],
+  getMeta: [Function: getMeta],
+  toJSON: [Function: toJSON]
 }
 /home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:128
     throw err;
     ^
 
-TypeError: this.logic.getInitialSnapshot is not a function
-    at Actor._initState (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:597:161)
-    at new Actor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:590:10)
-    at createActor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:1083:10)
-    at /home/bahl/Desktop/TestVue/FSM/server.js:21:23
+TypeError: Cannot read properties of undefined (reading 'getSnapshot')
+    at /home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/xstate.cjs.js:494:17
+    at Array.forEach (<anonymous>)
+    at StateMachine.start (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/xstate.cjs.js:493:38)
+    at Actor.start (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:835:20)
+    at /home/bahl/Desktop/TestVue/FSM/server.js:25:17
     at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
     at next (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:149:13)
     at Route.dispatch (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:119:3)
     at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
     at /home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:284:15
-    at Function.process_params (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:346:12)
 
 Node.js v22.14.0
