@@ -1,0 +1,149 @@
+const { createMachine, createActor, assign } = require("xstate");
+const axios = require("axios");
+
+const apiMachine = createMachine({
+  id: "apiRequest",
+  initial: "loading", 
+  context: {
+    data: null,
+    error: null,
+    endpoint: null, 
+  },
+  states: {
+    loading: {
+      invoke: {
+        src: "fetchData",
+        onDone: { target: "success", actions: "setData" },
+        onError: { target: "failure", actions: "setError" },
+      },
+    },
+    success: {
+      type: "final",
+    },
+    failure: {
+      type: "final",
+    },
+  },
+}, {
+  actions: {
+    setData: assign((context, event) => ({ data: event.output, error: null })),
+    setError: assign((context, event) => ({ error: event.error })),
+  },
+  services: {
+    services: {
+        fetchData: async (context) => {
+            
+          try {
+            const response = await axios.post(context.endpoint, context.data);
+            return response.data;
+          } catch (error) {
+            console.error("Error in fetchData service:", error);
+          }
+        },
+      },
+  },
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const express = require("express");
+const { createActor } = require("xstate");
+const apiMachine = require('./src/Machines/machine')
+const cors=require('cors'); 
+
+
+const app = express();
+app.use(express.json());
+app.use(cors())
+
+
+app.post("/api/login", async (req, res) => {
+
+    const endpoint = 'http://10.51.41.12:8082/users/login';
+    const data = req.body;
+    console.log("Payload before hitting api" + JSON.stringify(data));
+  
+    if (!endpoint) return res.status(400).json({ error: "URL is required" });
+  
+    try {
+      const service = createActor(apiMachine,{
+        context: { endpoint, data } 
+      });
+  
+        service.start();   
+        const initialState = service.getSnapshot();
+        console.log("FSM Initial State:", initialState);
+  
+    //   service.stop(); 
+    } catch (error) {
+        console.log(error)
+      res.status(500).json({ error: "Unexpected error occurred" });
+    }
+  });
+  
+  app.listen(3000, () => console.log("Server running on port 3000"));
+
+
+module.exports = { apiMachine, createActor };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Server running on port 3000
+Payload before hitting api{"branchCode":"0002","username":"tsting","password":"login11111"}
+FSM Initial State: {
+  status: 'error',
+  output: undefined,
+  error: TypeError: this.logic.getInitialSnapshot is not a function
+      at Actor._initState (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:597:161)
+      at new Actor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:590:10)
+      at createActor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:1083:10)
+      at /home/bahl/Desktop/TestVue/FSM/server.js:21:23
+      at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
+      at next (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:149:13)
+      at Route.dispatch (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:119:3)
+      at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
+      at /home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:284:15
+      at Function.process_params (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:346:12)
+}
+/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:128
+    throw err;
+    ^
+
+TypeError: this.logic.getInitialSnapshot is not a function
+    at Actor._initState (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:597:161)
+    at new Actor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:590:10)
+    at createActor (/home/bahl/Desktop/TestVue/FSM/node_modules/xstate/dist/raise-60cebf03.cjs.js:1083:10)
+    at /home/bahl/Desktop/TestVue/FSM/server.js:21:23
+    at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
+    at next (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:149:13)
+    at Route.dispatch (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/route.js:119:3)
+    at Layer.handle [as handle_request] (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/layer.js:95:5)
+    at /home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:284:15
+    at Function.process_params (/home/bahl/Desktop/TestVue/FSM/node_modules/express/lib/router/index.js:346:12)
+
+Node.js v22.14.0
