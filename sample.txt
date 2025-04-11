@@ -1,8 +1,10 @@
 <template>
-  <div style="background-color: #a0cc8a; padding: 20px;">
+  <div style="background-color: #a0c8a8; padding: 20px;">
     <el-tabs v-model="activeTab">
       <el-tab-pane label="PICH" name="pich">
-        <el-form label-width="120px">
+        <!-- Customer Information Section -->
+        <h3>Customer Information</h3>
+        <el-form label-width="180px">
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="Supplier Code">
@@ -51,6 +53,36 @@
             </el-col>
           </el-row>
         </el-form>
+
+        <!-- Authorized Person Section -->
+        <h3 style="margin-top: 30px;">Authorized Person Details</h3>
+        <el-form label-width="180px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="Authorized Person Name">
+                <el-input v-model="form.authPersonName" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="CNIC No.">
+                <el-input v-model="form.cnic" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="Contact No.">
+                <el-input v-model="form.contact" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="Designation">
+                <el-input v-model="form.designation" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </el-tab-pane>
 
       <el-tab-pane label="Item Info" name="itemInfo">
@@ -58,11 +90,12 @@
       </el-tab-pane>
     </el-tabs>
 
-    <div style="margin-top: 20px; text-align: right;">
-      <el-button type="primary">OK</el-button>
-      <el-button>Back</el-button>
-      <el-button type="danger">Exit</el-button>
-      <el-button type="success">Scan Docs</el-button>
+    <!-- Shared Buttons -->
+    <div style="margin-top: 30px; text-align: left;">
+      <el-button plain style="background-color: white; color: black;">OK</el-button>
+      <el-button plain style="background-color: white; color: black;">Back</el-button>
+      <el-button plain style="background-color: white; color: black;">Exit</el-button>
+      <el-button plain style="background-color: white; color: black;">Scan Docs</el-button>
     </div>
   </div>
 </template>
@@ -78,6 +111,10 @@ const form = ref({
   store: '',
   pichType: '',
   currency: '',
-  exchangeRate: ''
+  exchangeRate: '',
+  authPersonName: '',
+  cnic: '',
+  contact: '',
+  designation: ''
 })
 </script>
