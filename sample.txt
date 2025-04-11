@@ -1,0 +1,83 @@
+<template>
+  <div style="background-color: #a0cc8a; padding: 20px;">
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="PICH" name="pich">
+        <el-form label-width="120px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="Supplier Code">
+                <el-input v-model="form.supplierCode" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="Supplier Name">
+                <el-input v-model="form.supplierName" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="Store">
+                <el-select v-model="form.store" placeholder="Select Store">
+                  <el-option label="Store A" value="storeA" />
+                  <el-option label="Store B" value="storeB" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="PICH Type">
+                <el-select v-model="form.pichType" placeholder="Select PICH Type">
+                  <el-option label="Type 1" value="type1" />
+                  <el-option label="Type 2" value="type2" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="Currency">
+                <el-select v-model="form.currency" placeholder="Select Currency">
+                  <el-option label="PKR" value="PKR" />
+                  <el-option label="USD" value="USD" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="Exchange Rate">
+                <el-input v-model="form.exchangeRate" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+      </el-tab-pane>
+
+      <el-tab-pane label="Item Info" name="itemInfo">
+        <div>Hello</div>
+      </el-tab-pane>
+    </el-tabs>
+
+    <div style="margin-top: 20px; text-align: right;">
+      <el-button type="primary">OK</el-button>
+      <el-button>Back</el-button>
+      <el-button type="danger">Exit</el-button>
+      <el-button type="success">Scan Docs</el-button>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+const activeTab = ref('pich')
+
+const form = ref({
+  supplierCode: '',
+  supplierName: '',
+  store: '',
+  pichType: '',
+  currency: '',
+  exchangeRate: ''
+})
+</script>
