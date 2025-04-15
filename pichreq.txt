@@ -1,0 +1,270 @@
+<template>
+  <div style="background-color: #a0c8a8; padding: 20px;">
+    <h3>Customer Information</h3>
+    <el-form label-width="150px" style="margin-bottom: 20px;">
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="A/C No." >
+            <el-input disabled v-model="customer.acNo"/>
+          </el-form-item>
+          <el-form-item label="A/C Title">
+            <el-input disabled v-model="customer.acTitle" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="NTN No.">
+            <el-input disabled v-model="customer.ntn" />
+          </el-form-item>
+          <el-form-item label="IBAN">
+            <el-input disabled v-model="customer.iban" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+
+    <!-- Tabs -->
+    <el-tabs v-model="activeTab">
+      <!-- PICH Tab -->
+      <el-tab-pane label="PICH" name="pich">
+        <!-- Field Section -->
+        <el-form label-width="180px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="PICH No.">
+                <el-input v-model="form.pichNo" />
+              </el-form-item>
+              <el-form-item label="Currency">
+                <el-select v-model="form.currency" placeholder="Select Currency">
+                  <el-option label="PKR" value="PKR" />
+                  <el-option label="USD" value="USD" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Tenor">
+                <el-input v-model="form.tenor" />
+              </el-form-item>
+              <el-form-item label="PICH Maturity">
+                <el-input v-model="form.maturity" />
+              </el-form-item>
+              <el-form-item label="Port of Desc.">
+                <el-select v-model="form.portOfDesc" placeholder="Select Port">
+                  <el-option label="Karachi" value="karachi" />
+                  <el-option label="Lahore" value="lahore" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="12">
+              <el-form-item label="PICH Date">
+                <el-date-picker v-model="form.pichDate" type="date" />
+              </el-form-item>
+              <el-form-item label="Mode of Payment">
+                <el-select v-model="form.paymentMode" placeholder="Select Mode">
+                  <el-option label="Cash" value="cash" />
+                  <el-option label="Bank Transfer" value="bank" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Consignee Name">
+                <div style="display: flex; gap: 5px;">
+                  <el-input v-model="form.consigneeName" />
+                  <el-button type="primary" plain>Add</el-button>
+                </div>
+              </el-form-item>
+              <el-form-item label="PICH Amount">
+                <el-input v-model="form.pichAmount" />
+              </el-form-item>
+              <el-form-item label="Consignee Passport No.">
+                <el-input v-model="form.passportNo" />
+              </el-form-item>
+              <el-form-item label="Consignee ID No.">
+                <el-input v-model="form.idNo" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+
+        <!-- Authorized Person Table -->
+        <h3 style="margin-top: 30px;">Authorized Person Details</h3>
+        <el-table :data="authorizedList" highlight-current-row @current-change="selectedRow = $event" border
+          style="width: 100%; margin-bottom: 10px">
+          <el-table-column label="Name" prop="name" />
+          <el-table-column label="Address" prop="address" />
+          <el-table-column label="Passport No." prop="passport" />
+          <el-table-column label="ID No." prop="id" />
+        </el-table>
+        <div style="text-align: right; margin-bottom: 20px;">
+          <el-button plain style="background: white; color: black; margin-right: 10px" @click="removePerson"
+            :disabled="!selectedRow">
+            Remove
+          </el-button>
+          <el-button plain style="background: white; color: black;" @click="dialogVisible = true">
+            Add
+          </el-button>
+        </div>
+      </el-tab-pane>
+
+      <!-- Item Info Tab -->
+      <el-tab-pane label="Item Info" name="itemInfo">
+        <div>Hello</div>
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- Shared Buttons -->
+    <div style="margin-top: 20px; text-align: left;">
+      <el-button plain style="background: white; color: black;">OK</el-button>
+      <el-button plain style="background: white; color: black;">Back</el-button>
+      <el-button plain style="background: white; color: black;">Exit</el-button>
+      <el-button plain style="background: white; color: black;">Scan Docs</el-button>
+    </div>
+
+    <!-- Add Authorized Person Dialog -->
+    <el-dialog v-model="dialogVisible" title="Add Authorized Person" width="500px">
+      <el-form label-width="160px">
+        <el-form-item label="Authorized Person Name">
+          <el-input v-model="authForm.name" />
+        </el-form-item>
+        <el-form-item label="Authorized Person Address">
+          <el-input v-model="authForm.address" />
+        </el-form-item>
+        <el-form-item label="Passport No.">
+          <el-input v-model="authForm.passport" />
+        </el-form-item>
+        <el-form-item label="Identification No.">
+          <el-input v-model="authForm.id" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button plain style="background: white; color: black;" @click="addPerson">Add</el-button>
+        <el-button plain style="background: white; color: black;" @click="dialogVisible = false">Exit</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<style scoped>
+.labelCustomerNumberNumeric6 {
+  font-weight: var(--3eb102f3) !important;
+  color: var(--1e785097) !important;
+  font-family: var(--1ff334dd) !important;
+}
+
+.el-form-item__content {
+  line-height: 20px !important;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+</style>
+
+
+<script setup>
+import { onMounted, ref } from 'vue'
+
+const activeTab = ref('pich')
+
+const customer = ref({
+  acNo: '',
+  acTitle: '',
+  ntn: '',
+  iban: ''
+})
+let userDetails = JSON.parse(localStorage.getItem('userDetails'));
+let selectedAccountDetails = JSON.parse(localStorage.getItem('PICHAccSelect'));
+const token = userDetails.payload.token;
+const selectedAccountNum = selectedAccountDetails.selectedAccountNumber;
+
+onMounted(async () => {
+
+  const [branchCode, accountType, customerNumber, runNo, checkDigit] = selectedAccountNum.split("-");
+  console.log("Account Num consolidated is:" + " " + branchCode + "-" + accountType + "-" + customerNumber + "-" + runNo + "-" + checkDigit);
+  const accPayload = {
+    customerNumber,
+    token,
+    branchCode,
+    accountType,
+    runNo,
+    checkDigit
+  }
+  const dataa = await fetchAccountDetails(accPayload);
+  console.log(dataa);
+  customer.value.acNo = dataa?.payload?.accountNo ? dataa?.payload?.accountNo : "-";
+  customer.value.acTitle = dataa?.payload?.accountTitle ? dataa?.payload?.accountTitle : "-";
+  customer.value.ntn = dataa?.payload?.ntnNo ? dataa?.payload?.ntnNo : "-";
+  customer.value.iban = dataa?.payload?.ibanNo ? dataa?.payload?.ibanNo : "-";
+})
+
+async function fetchAccountDetails(payload) {
+  try {
+    const response = await fetch(`http://localhost:3000/getAllAccountsDetails`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+      const errorData = response.json()
+      const errorMessage = errorData.response
+      throw new Error(errorMessage);
+    }
+
+    const responseData = await response.json()
+    const finalData = responseData.response;
+
+    if (finalData.status !== 200) {
+      console.log(finalData.message)
+    } else {
+      console.log("Success!");
+      return finalData;
+    }
+
+  } catch (error) {
+    if (error) {
+      return [];
+    }
+    else { return []; }
+  }
+}
+
+
+
+// PICH Tab Form
+const form = ref({
+  pichNo: '',
+  currency: '',
+  tenor: '',
+  maturity: '',
+  portOfDesc: '',
+  pichDate: '',
+  paymentMode: '',
+  consigneeName: '',
+  pichAmount: '',
+  passportNo: '',
+  idNo: ''
+})
+
+// Authorized Persons Table
+const authorizedList = ref([])
+const selectedRow = ref(null)
+const dialogVisible = ref(false)
+const authForm = ref({
+  name: '',
+  address: '',
+  passport: '',
+  id: ''
+})
+
+const addPerson = () => {
+  if (authForm.value.name && authForm.value.passport) {
+    authorizedList.value.push({ ...authForm.value })
+    authForm.value = { name: '', address: '', passport: '', id: '' }
+    dialogVisible.value = false
+  }
+}
+
+const removePerson = () => {
+  const index = authorizedList.value.findIndex(person => person === selectedRow.value)
+  if (index !== -1) authorizedList.value.splice(index, 1)
+  selectedRow.value = null
+}
+</script>
+
