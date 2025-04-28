@@ -1,55 +1,63 @@
-// Layout
+import org.eclipse.birt.core.framework.Platform;
+import org.eclipse.birt.report.engine.api.EngineConfig;
+import org.eclipse.birt.report.engine.api.IReportEngine;
+import org.eclipse.birt.report.engine.api.IReportEngineFactory;
+import org.eclipse.birt.report.engine.api.IRunAndRenderTask;
+import org.eclipse.birt.report.engine.api.PDFRenderOption;
 
-<template>
-  <el-container style="height: 100vh;">
-    <SidebarMenu :defaultSelectedItem="''" :isAllDisabled="true" />
-    <el-container direction="vertical">
-      <HeaderBar />
-      <el-main class="main-scrollable">
-        <slot />
-      </el-main>
-      <FooterComponent />
-    </el-container>
-  </el-container>
-</template>
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-<script setup>
-import SidebarMenu from '@/components/NavigationMenus/SidebarMenu.vue'
-import HeaderBar from '@/components/Header/HeaderBar.vue'
-import FooterComponent from '@/components/Footer/FooterComponent.vue'
-</script>
+@Path("/report")
+public class ReportResource {
 
-<style scoped>
-.main-scrollable {
-  overflow-y: auto;
-  height: calc(100vh - 100px); /* Adjust based on your header/footer height */
-  padding: 16px;
+    IReportEngine birtReportEngine = null;
+
+    @PostConstruct
+    public void init() throws Exception {
+        EngineConfig config = new EngineConfig();
+        config.setLogConfig(null, Level.FINE);
+        Platform.startup(config);
+        IReportEngineFactory factory = (IReportEngineFactory) Platform.createFactoryObject(IReportEngineFactory.EXTENSION_REPORT_ENGINE_FACTORY);
+        birtReportEngine = factory.createReportEngine(config);
+    }
+
+    @PreDestroy
+    public void destroy() {
+        if (birtReportEngine != null) {
+            birtReportEngine.destroy();
+            Platform.shutdown();
+        }
+    }
+
+    @GET
+    @Path("/pdf")
+    @Produces("application/pdf")
+    public Response generatePdf() throws Exception {
+        // Load your report
+        var design = birtReportEngine.openReportDesign("reports/your_report.rptdesign");
+
+        var task = birtReportEngine.createRunAndRenderTask(design);
+
+        // Set rendering options
+        var options = new PDFRenderOption();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        options.setOutputStream(out);
+        options.setOutputFormat("pdf");
+        task.setRenderOption(options);
+
+        task.run();
+        task.close();
+
+        return Response.ok(out.toByteArray())
+                .type(MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment; filename=\"report.pdf\"")
+                .build();
+    }
 }
-</style>
-
-
-
-
-
-
-//megaset 
-<template>
-  <PostLoginLayout>
-    <PichReq />
-  </PostLoginLayout>
-</template>
-
-<script setup>
-import PostLoginLayout from '@/layouts/PostLoginLayout.vue'
-import PichReq from '@/components/Grids/PichReq.vue'
-</script>
-
-
-
-
-// app.vue
-<template>
-  <RouterView />
-</template>
-
-
