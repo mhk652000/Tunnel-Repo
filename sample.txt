@@ -1,63 +1,861 @@
-import org.eclipse.birt.core.framework.Platform;
-import org.eclipse.birt.report.engine.api.EngineConfig;
-import org.eclipse.birt.report.engine.api.IReportEngine;
-import org.eclipse.birt.report.engine.api.IReportEngineFactory;
-import org.eclipse.birt.report.engine.api.IRunAndRenderTask;
-import org.eclipse.birt.report.engine.api.PDFRenderOption;
+<template>
+  <div style="background-color: #a0c8a8; padding: 20px;">
+    <h3>Customer Information</h3>
+    <el-form label-width="150px" style="margin-bottom: 20px;">
+      <el-row :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="A/C No.">
+            <el-input disabled v-model="customer.acNo" />
+          </el-form-item>
+          <el-form-item label="A/C Title">
+            <el-input disabled v-model="customer.acTitle" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="NTN No.">
+            <el-input disabled v-model="customer.ntn" />
+          </el-form-item>
+          <el-form-item label="IBAN">
+            <el-input disabled v-model="customer.iban" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="PICH" name="pich">
 
-@Path("/report")
-public class ReportResource {
 
-    IReportEngine birtReportEngine = null;
+        <el-form label-width="180px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="PICH No.">
+                <el-input v-model="form.pichNo" disabled />
+              </el-form-item>
+              <el-form-item label="Currency">
+                <el-select v-model="form.currencyId" placeholder="" @change="handleCurrencyChange">
+                  <el-option label="USD" value="1" />
+                  <el-option label="EUR" value="2" />
+                  <el-option label="GBP" value="3" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Tenor">
+                <el-input v-model="form.tenor" maxlength="5" @input="tenorValidation" @blur="calculateMaturity" />
+              </el-form-item>
+              <el-form-item label="PICH Maturity">
+                <el-input v-model="form.maturity" disabled />
+              </el-form-item>
+              <el-form-item label="Port of Desc.">
+                <el-select v-model="form.portOfDesc">
+                  <el-option label="KARACHI" value='1' />
+                  <el-option label="GWADAR" value='2' />
+                  <el-option label="LAHORE" value='3' />
+                  <el-option label="ISLAMABAD" value='4' />
+                  <el-option label="PESHAWAR" value='5' />
+                </el-select>
+              </el-form-item>
+            </el-col>
 
-    @PostConstruct
-    public void init() throws Exception {
-        EngineConfig config = new EngineConfig();
-        config.setLogConfig(null, Level.FINE);
-        Platform.startup(config);
-        IReportEngineFactory factory = (IReportEngineFactory) Platform.createFactoryObject(IReportEngineFactory.EXTENSION_REPORT_ENGINE_FACTORY);
-        birtReportEngine = factory.createReportEngine(config);
-    }
+            <el-col :span="12">
+              <el-form-item label="PICH Date">
+                <el-input v-model="form.pichDate" disabled />
+              </el-form-item>
+              <el-form-item label="Mode of Payment">
+                <el-select v-model="form.paymentMode">
+                  <el-option label="Advance Payment" value='1' />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Consignee Name">
+                <div style="display: flex; gap: 5px;">
+                  <el-input v-model="form.consigneeName" />
+                  <el-button type="primary" plain @click="openConsigneeListModal">List</el-button>
+                  <TablePopup ref="consigneeListModal" @update:consignee="updateConsignee" />
+                </div>
+              </el-form-item>
+              <el-form-item label="PICH Amount">
+                <el-input v-model="form.pichAmount" disabled />
+              </el-form-item>
+              <el-form-item label="Consignee Passport No.">
+                <el-input v-model="form.passportNo" maxlength="50" />
+              </el-form-item>
+              <el-form-item label="Consignee Identification No.">
+                <el-input v-model="form.idNo" maxlength="50" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
 
-    @PreDestroy
-    public void destroy() {
-        if (birtReportEngine != null) {
-            birtReportEngine.destroy();
-            Platform.shutdown();
-        }
-    }
+        <!-- Authorized Person Table -->
+        <h3 style="margin-top: 30px;">Authorized Person Details</h3>
+        <el-table :data="authorizedList" highlight-current-row @current-change="selectedPersonRow = $event" border
+          style="width: 100%; margin-bottom: 10px" height="120px">
+          <el-table-column label="Name" prop="authPersonName" />
+          <el-table-column label="Address" prop="authPersonAddress" />
+          <el-table-column label="Passport No." prop="authPersonPasspNo" />
+          <el-table-column label="ID No." prop="authPersonIdenNo" />
+        </el-table>
+        <div style="text-align: right; margin-bottom: 20px;">
+          <el-button plain style="background: white; color: black; margin-right: 10px" @click="removePerson"
+            :disabled="!selectedPersonRow">
+            Remove
+          </el-button>
+          <el-button plain style="background: white; color: black;" @click="dialogVisible = true" :disabled="maxLimit">
+            Add
+          </el-button>
+        </div>
+      </el-tab-pane>
 
-    @GET
-    @Path("/pdf")
-    @Produces("application/pdf")
-    public Response generatePdf() throws Exception {
-        // Load your report
-        var design = birtReportEngine.openReportDesign("reports/your_report.rptdesign");
 
-        var task = birtReportEngine.createRunAndRenderTask(design);
 
-        // Set rendering options
-        var options = new PDFRenderOption();
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        options.setOutputStream(out);
-        options.setOutputFormat("pdf");
-        task.setRenderOption(options);
 
-        task.run();
-        task.close();
 
-        return Response.ok(out.toByteArray())
-                .type(MediaType.APPLICATION_OCTET_STREAM)
-                .header("Content-Disposition", "attachment; filename=\"report.pdf\"")
-                .build();
-    }
+
+
+      <!-- Item Info Tab -->
+      <el-tab-pane label="Item Info" name="itemInfo">
+        <!-- Field Section -->
+        <el-form label-width="180px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="HS Code">
+                <div style="display: flex; gap: 5px;">
+                  <el-input v-model="itemForm.hsCode" maxlength="14" />
+                  <el-button type="primary" plain @click="openItemListModal">List</el-button>
+                  <HSCodePopup ref="itemListModal" @update:hsCode="updateHsCode" />
+
+                </div>
+              </el-form-item>
+              <el-form-item label="Commodity Description">
+                <el-input v-model="itemForm.goodsDesc" maxlength="100" />
+              </el-form-item>
+              <el-form-item label="Country of Origin">
+                <el-select v-model="itemForm.countryOriginId" placeholder="" disabled>
+                  <el-option label="Pakistan-586" value="6" />
+                </el-select>
+              </el-form-item>
+
+
+              <el-form-item label="Currency">
+                <el-select v-model="itemForm.currencyId" placeholder="" disabled>
+                  <el-option label="USD" value="1" />
+                  <el-option label="EUR" value="2" />
+                  <el-option label="GBP" value="3" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Quantity">
+                <el-input v-model="itemForm.quantity" @input="handleQuantityValidation" />
+              </el-form-item>
+              <el-form-item label="Unit Price">
+                <el-input v-model="itemForm.unitPrice" disabled />
+              </el-form-item>
+            </el-col>
+
+            <el-col :span="12">
+              <el-form-item label="Sum Of Item Amount: ">
+                <h4> {{ sumAmount }}</h4>
+              </el-form-item>
+              <el-form-item label="Units">
+                <el-select v-model="itemForm.uomId" placeholder="">
+                  <el-option label="KG" value="1" />
+                  <el-option label="KM" value="2" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="Amount FCY">
+                <el-input v-model="itemForm.amountFcy" @input="handleAmountFcyInput" />
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <div style="text-align: right; margin-bottom: 20px;">
+            <el-button plain style="background: white; color: black;" @click="addItem">
+              Add Item
+            </el-button>
+            <el-button plain style="background: white; color: black; margin-right: 10px" @click="changeItem"
+              :disabled="!selectedRow">
+              Change Item
+            </el-button>
+            <el-button plain style="background: white; color: black; margin-right: 10px" @click="removeItem"
+              :disabled="!selectedRow">
+              Remove Item
+            </el-button>
+
+          </div>
+        </el-form>
+
+        <el-table :data="itemList" highlight-current-row @current-change="selectedRow = $event" border
+          style="width: 100%; margin-bottom: 10px" height="120px">
+          <el-table-column label="HSCode" prop="hsCode" />
+          <el-table-column label="Country of Origin" prop="countryOriginId" />
+          <el-table-column label="Commodity Desc" prop="goodsDesc" />
+          <el-table-column label="Units" prop="uomId" />
+          <el-table-column label="Quantity" prop="quantity" />
+          <el-table-column label="Unit Price" prop="unitPrice" />
+          <el-table-column label="Currency" prop="currencyId" />
+          <el-table-column label="Amount FCY" prop="amountFcy" />
+        </el-table>
+
+      </el-tab-pane>
+    </el-tabs>
+
+    <!-- Shared Buttons -->
+    <div style="margin-top: 20px; text-align: left;">
+      <el-button plain style="background: white; color: black;" @click="submitPichRequest">OK</el-button>
+      <el-button plain style="background: white; color: black;" @click="handleBack">Back</el-button>
+      <el-button plain style="background: white; color: black;" @click="handleExit">Exit</el-button>
+      <el-button plain style="background: white; color: black;" @click="handleScanDocs">Scan Docs</el-button>
+    </div>
+
+    <!-- Add Authorized Person Dialog -->
+    <el-dialog v-model="dialogVisible" title="Add Authorized Person">
+      <el-form label-width="200px">
+        <el-form-item label="Authorized Person Name">
+          <el-input v-model="authForm.authPersonName" />
+        </el-form-item>
+        <el-form-item label="Authorized Person Address">
+          <el-input v-model="authForm.authPersonAddress" />
+
+        </el-form-item>
+        <el-form-item label="Passport No.">
+          <el-input v-model="authForm.authPersonPasspNo" />
+        </el-form-item>
+        <el-form-item label="Identification No.">
+          <el-input v-model="authForm.authPersonIdenNo" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button plain style="background: white; color: black;" @click="addPerson">Add</el-button>
+        <el-button plain style="background: white; color: black;" @click="dialogVisible = false">Exit</el-button>
+      </template>
+    </el-dialog>
+  </div>
+
+  <el-dialog v-model="scanDialogVisible" title="Scan Documents" width="50%" style="background-color: #a0c8a8;">
+    <el-upload
+      ref="upload"
+      class="upload-demo"
+      drag
+      accept=".pdf"
+      :limit="1"
+      :on-exceed="handleExceed"
+      :auto-upload="false"
+      :show-file-list="true"
+      :http-request="dummyRequest"
+      @change="handleFileChange"
+    >
+      <el-icon class="el-icon--upload"><upload-filled/></el-icon>
+      <div class="el-upload__text">
+        Drop file here or <em>click to upload</em>
+      </div>
+      <template #file="{ file }">
+        <div>{{ file.name }}</div>
+      </template>
+    </el-upload>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="cancelScanDialog">Cancel</el-button>
+        <el-button type="primary" @click="confirmScanDialog" :disabled="!uploadedFile">
+          OK
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+
+
+</template>
+
+<style scoped>
+.labelCustomerNumberNumeric6 {
+  font-weight: var(--3eb102f3) !important;
+  color: var(--1e785097) !important;
+  font-family: var(--1ff334dd) !important;
 }
+
+:deep(.el-form-item__label) {
+  color: black !important;
+  font-weight: 500;
+}
+
+:deep(.el-input.is-disabled .el-input__inner) {
+  font-weight: 500 !important;
+  background-color: #e0e0e0 !important;
+  -webkit-text-fill-color: #333333 !important;
+}
+
+:deep(.el-input.is-disabled .el-input__wrapper) {
+  background-color: #e0e0e0 !important;
+  color: black !important;
+  font-weight: 500 !important;
+}
+
+:deep(.el-input) {
+  font-weight: 600 !important;
+  background-color: white !important;
+  -webkit-text-fill-color: #000 !important;
+}
+
+
+
+
+:deep(.el-select.is-disabled .el-input__wrapper) {
+  background-color: #e0e0e0 !important;
+  color: black !important;
+  font-weight: 500 !important;
+  -webkit-text-fill-color: #333333 !important;
+}
+
+:deep(.el-select.is-disabled .el-input__inner) {
+  background-color: #e0e0e0 !important;
+  color: black !important;
+  font-weight: 500 !important;
+  -webkit-text-fill-color: #333333 !important;
+}
+
+:deep(.el-select__wrapper.is-disabled) {
+  background-color: #e0e0e0 !important;
+  color: #000;
+  font-weight: 500;
+  -webkit-text-fill-color: #333333 !important;
+}
+
+:deep(.el-select.is-disabled .el-input__inner) {
+  color: black !important;
+  font-weight: 500;
+  -webkit-text-fill-color: #333333 !important;
+}
+
+:deep(.el-select__wrapper:not(.is-disabled)) {
+  background-color: white !important;
+  -webkit-text-fill-color: #000 !important;
+}
+
+
+:deep(.el-button) {
+  font-family: Arial !important;
+  font-weight: normal !important;
+  font-size: 15px !important;
+  height: 30px !important;
+  width: 160px !important;
+  background: linear-gradient(white 8%, rgb(240, 240, 240) 48%) !important;
+  border: 1px solid #dcdfe6 !important;
+  color: #000 !important;
+  padding: 0 15px !important;
+}
+
+
+:deep(.el-button:hover),
+:deep(.el-button:focus) {
+  background: linear-gradient(white 5%, rgb(230, 230, 230) 45%) !important;
+}
+
+/* Disabled style */
+:deep(.el-button.is-disabled),
+:deep(.el-button.is-disabled:hover) {
+  background: #e0e0e0 !important;
+  color: #999 !important;
+  cursor: not-allowed !important;
+  border-color: #dcdfe6 !important;
+  opacity: 0.6 !important;
+}
+
+
+
+
+:deep(.el-table__header-wrapper .el-table__header) {
+  background-color: rgb(160, 200, 168) !important;
+  border-color: 1px solid #000 !important;
+  color: #000 !important;
+}
+
+:deep(.el-table__header th) {
+  background-color: rgb(160, 200, 168) !important;
+  border-color: 1px solid #000 !important;
+  color: #000 !important;
+}
+
+:deep(.el-table__body tr:hover >td) {
+  background-color: rgba(160, 200, 168, 0.75) !important;
+}
+
+:deep(.el-table__body .el-table__row.current-row >td) {
+  background-color: rgba(160, 200, 168, 0.75) !important;
+}
+
+
+:deep(.el-table, ) {
+  border: 1px solid gray !important;
+}
+
+:deep(.el-table th) {
+  border: 1px groove gray !important;
+
+}
+
+:deep(.el-table td) {
+  border: 1px groove gray !important;
+}
+
+:deep(.el-table .el-table__body tr) {
+  height: 20px !important;
+}
+
+:deep(.el-table .el-table__body td) {
+  padding: 0px !important;
+}
+
+:deep(.el-dialog) {
+  background-color: rgb(160, 200, 168);
+  width: 800px;
+}
+</style>
+
+
+
+<script setup>
+import { onMounted, ref } from 'vue';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en';
+import duration from 'dayjs/plugin/duration';
+import router from '@/router';
+import HSCodePopup from '../Popups/HSCodePopup.vue';
+import TablePopup from '../Popups/TablePopup.vue';
+import { UploadFilled } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import ApiService from '@/services/ApiService';
+
+dayjs.extend(duration);
+
+const itemListModal = ref(null);
+const consigneeListModal = ref(null);
+const activeTab = ref('pich');
+const customer = ref({
+  acNo: '',
+  acTitle: '',
+  ntn: '',
+  iban: '',
+});
+
+const scanDialogVisible = ref(false);
+const uploadedFile = ref(null);
+const uploadedFileName = ref('');
+const upload = ref(null);
+
+
+
+const openItemListModal = () => {
+  itemListModal.value.openPopup();
+};
+
+const openConsigneeListModal = () => {
+  consigneeListModal.value.openPopup();
+}
+const updateHsCode = (code) => {
+  itemForm.value.hsCode = code?.HS_CODE;
+};
+
+
+const updateConsignee = (code) => {
+  form.value.consigneeName = code?.name;
+  form.value.consigneeId = code?.code;
+  console.log(form.value.consigneeId);
+}
+const handleExit = () => {
+  localStorage.removeItem("PICHAccSelect");
+  router.push('/tradefinance/exports')
+}
+const handleScanDocs = ()=>{
+  scanDialogVisible.value = true;
+}
+
+const cancelScanDialog = () => {
+  scanDialogVisible.value = false;
+  uploadedFile.value = null;
+  uploadedFileName.value = '';
+  if (upload.value) {
+    upload.value.clearFiles();
+  }
+};
+
+const confirmScanDialog = async () => {
+  if (uploadedFile.value) {
+    console.log('Uploaded Document Blob:', uploadedFile.value);
+    console.log('Uploaded Document Name:', uploadedFileName.value);
+    // Here you can store the uploadedFile.value (Blob) in your form data
+  }
+  scanDialogVisible.value = false;
+  const response=await ApiService.uploadDocs(uploadedFile.value);
+  console.log(response);
+  if(response.status==200){
+    form.value.docId =response.payload.docId;
+  }
+
+};
+
+const handleExceed = (files, fileList) => {
+  ElMessage.warning(`The limit is 1 file, you selected ${files.length} this time, added up to ${fileList.length} totally`);
+};
+
+const handleFileChange = (file) => {
+  uploadedFile.value = file.raw;
+  uploadedFileName.value = file.name;
+};
+
+// Dummy request to prevent auto-upload
+const dummyRequest = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve("success");
+    }, 0);
+  });
+};
+
+
+
+
+const handleBack = () => {
+  localStorage.removeItem("PICHAccSelect");
+  router.push('/tradefinance/exports/pichreq');
+}
+
+let userDetails = JSON.parse(localStorage.getItem('userDetails'));
+let selectedAccountDetails = JSON.parse(localStorage.getItem('PICHAccSelect'));
+const token = userDetails?.payload?.token;
+const selectedAccountNum = selectedAccountDetails?.selectedAccountNumber ? selectedAccountDetails?.selectedAccountNumber : "";
+
+onMounted(async () => {
+  form.value.pichDate = dayjs().format('DD/MM/YYYY');
+  if (selectedAccountNum != "") {
+    const [branchCode, accountType, customerNumber, runNo, checkDigit] = selectedAccountNum.split("-");
+    console.log("Account Num consolidated is:" + " " + branchCode + "-" + accountType + "-" + customerNumber + "-" + runNo + "-" + checkDigit);
+    const accPayload = {
+      customerNumber,
+      token,
+      branchCode,
+      accountType,
+      runNo,
+      checkDigit
+    }
+    var dataa = await fetchAccountDetails(accPayload);
+    console.log(dataa);
+    customer.value.acNo = dataa?.payload?.accountNo ? dataa?.payload?.accountNo : "-";
+    customer.value.acTitle = dataa?.payload?.accountTitle ? dataa?.payload?.accountTitle : "-";
+    customer.value.ntn = dataa?.payload?.ntnNo ? dataa?.payload?.ntnNo : "-";
+    customer.value.iban = dataa?.payload?.ibanNo ? dataa?.payload?.ibanNo : "-";
+  }
+});
+
+async function fetchAccountDetails(payload) {
+  try {
+    const response = await fetch(`http://localhost:3000/getAllAccountsDetails`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+    if (!response.ok) {
+      const errorData = response.json();
+      const errorMessage = errorData.response;
+      throw new Error(errorMessage);
+    }
+
+    const responseData = await response.json();
+    const finalData = responseData.response;
+
+    if (finalData.status !== 200) {
+      console.log(finalData.message);
+    } else {
+      console.log("Success!");
+      return finalData;
+    }
+
+  } catch (error) {
+    console.error("Error fetching account details:", error);
+    return [];
+  }
+}
+const sumAmount = ref(0.00);
+
+
+
+const form = ref({
+  pichNo: '',
+  currencyId: '',
+  tenor: '',
+  maturity: '',
+  portOfDesc: '1',
+  pichDate: '',
+  paymentMode: '1',
+  consigneeName: '',
+  pichAmount: 0,
+  passportNo: '',
+  idNo: '',
+  consigneeId: '',
+  docId: ''
+});
+
+
+
+const authorizedList = ref([]);
+const itemList = ref([]);
+const selectedRow = ref(null);
+const selectedPersonRow = ref(null);
+const maxLimit = ref(0);
+const dialogVisible = ref(false);
+const authForm = ref({
+  authPersonName: '',
+  authPersonAddress: '',
+  authPersonPasspNo: '',
+  authPersonIdenNo: '',
+});
+const itemForm = ref({
+  hsCode: '',
+  goodsDesc: '',
+  countryOriginId: '6',
+  currencyId: form.value.currencyId,
+  quantity: '',
+  unitPrice: '',
+  uomId: '',
+  amountFcy: '',
+});
+
+const addPerson = () => {
+  if (authForm.value.authPersonName && authForm.value.authPersonPasspNo) {
+    authorizedList.value.push({ ...authForm.value });
+    authForm.value = { authPersonName: '', authPersonAddress: '', authPersonPasspNo: '', authPersonIdenNo: '' };
+    dialogVisible.value = false;
+    if (authorizedList.value.length <= 10) {
+      maxLimit.value = false;
+    } else {
+      maxLimit.value = true;
+    }
+  }
+};
+
+const removePerson = () => {
+  const index = authorizedList.value.findIndex(person => person === selectedPersonRow.value);
+  if (index !== -1) authorizedList.value.splice(index, 1);
+
+  if (authorizedList.value.length <= 10) {
+    maxLimit.value = false;
+  } else {
+    maxLimit.value = true;
+  }
+  selectedPersonRow.value = null;
+};
+
+const tenorValidation = (value) => {
+  form.value.tenor = value.replace(/\D/g, '');
+};
+
+const calculateMaturity = () => {
+  if (form.value.pichDate && form.value.tenor) {
+    const pichDate = dayjs(form.value.pichDate, 'DD/MM/YYYY');
+    const tenorDays = parseInt(form.value.tenor);
+    if (pichDate.isValid() && !isNaN(tenorDays)) {
+      const maturityDate = pichDate.add(dayjs.duration({ days: tenorDays }));
+      form.value.maturity = maturityDate.format('DD/MM/YYYY');
+    } else {
+      form.value.maturity = '';
+    }
+  } else {
+    form.value.maturity = '';
+  }
+};
+
+const addItem = () => {
+  if (
+    itemForm.value.hsCode != null && itemForm.value.hsCode.trim() !== '' &&
+    itemForm.value.goodsDesc != null && itemForm.value.goodsDesc.trim() !== '' &&
+    itemForm.value.countryOriginId != null && itemForm.value.countryOriginId.trim() !== '' &&
+    itemForm.value.currencyId != null && itemForm.value.currencyId.trim() !== '' &&
+    itemForm.value.quantity != null && String(itemForm.value.quantity).trim() !== '' &&
+    itemForm.value.unitPrice != null && String(itemForm.value.unitPrice).trim() !== '' &&
+    itemForm.value.uomId != null && itemForm.value.uomId.trim() !== '' &&
+    itemForm.value.amountFcy != null && String(itemForm.value.amountFcy).trim() !== ''
+  ) {
+    itemList.value.push({ ...itemForm.value });
+
+    sumAmount.value = 0;
+    itemList.value.forEach(item => {
+      if (item.amountFcy) {
+        sumAmount.value = parseFloat(sumAmount.value) + parseFloat(item.amountFcy);
+      }
+    });
+    form.value.pichAmount = sumAmount.value;
+
+    itemForm.value = {
+      hsCode: '',
+      goodsDesc: '',
+      countryOriginId: '6',
+      currencyId: form.value.currencyId,
+      quantity: '',
+      unitPrice: '',
+      uomId: '',
+      amountFcy: '',
+    };
+  } else {
+    console.log("Some item form fields are missing or empty");
+  }
+
+};
+
+
+const changeItem = () => {
+  const index = itemList.value.findIndex(item => item === selectedRow.value);
+  if (index !== -1) itemList.value.splice(index, 1);
+  itemForm.value = selectedRow.value;
+  sumAmount.value = 0;
+  itemList.value.forEach(item => {
+    if (item.amountFcy) {
+      sumAmount.value = parseFloat(sumAmount.value) + parseFloat(item.amountFcy);
+    }
+  });
+  form.value.pichAmount = sumAmount.value;
+  selectedRow.value = null;
+};
+const removeItem = () => {
+  const index = itemList.value.findIndex(item => item === selectedRow.value);
+  if (index !== -1) itemList.value.splice(index, 1);
+  sumAmount.value = 0;
+  itemList.value.forEach(item => {
+    if (item.amountFcy) {
+      sumAmount.value = parseFloat(sumAmount.value) + parseFloat(item.amountFcy);
+    }
+  });
+  form.value.pichAmount = sumAmount.value;
+  selectedRow.value = null;
+};
+
+
+const handleCurrencyChange = () => {
+  itemForm.value.currencyId = form.value.currencyId
+}
+
+const handleQuantityValidation = (value) => {
+  itemForm.value.quantity = value.replace(/[^1-9.]/g, '');
+
+  const newValue = value.replace(/[^1-9.]/g, '');
+  const parts = newValue.split('.');
+
+  if (parts.length > 2) {
+    itemForm.value.quantity = parts[0] + '.' + parts.slice(1).join('');
+  } else if (parts.length === 2 && parts[1].length > 4) {
+    itemForm.value.quantity = parts[0] + '.' + parts[1].slice(0, 4);
+  } else if (parts.length === 2 && parts[0].length > 15) {
+    itemForm.value.quantity = parts[0].slice(0, 15) + '.' + parts[1];
+  } else {
+    itemForm.value.quantity = newValue.slice(0, 15);
+  }
+
+  calculateUnitPrice();
+}
+
+const handleAmountFcyInput = (value) => {
+  const newValue = value.replace(/[^0-9.]/g, '');
+  const parts = newValue.split('.');
+
+  if (parts.length > 2) {
+    itemForm.value.amountFcy = parts[0] + '.' + parts.slice(1).join('');
+  } else if (parts.length === 2 && parts[1].length > 4) {
+    itemForm.value.amountFcy = parts[0] + '.' + parts[1].slice(0, 4);
+  } else if (parts.length === 2 && parts[0].length > 18) {
+    itemForm.value.amountFcy = parts[0].slice(0, 18) + '.' + parts[1];
+  } else {
+    itemForm.value.amountFcy = newValue.slice(0, 18);
+  }
+
+  calculateUnitPrice();
+
+};
+
+const calculateUnitPrice = () => {
+  if (itemForm.value.amountFcy != "" && itemForm.value.quantity != "" && itemForm.value.amountFcy != "0" && itemForm.value.quantity != "0") {
+    itemForm.value.unitPrice = itemForm.value.amountFcy / itemForm.value.quantity;
+  }
+}
+
+async function InsertPich(payload) {
+  try {
+    const newPayload = {
+      data: payload,
+      token: token
+    }
+    const response = await fetch(`http://localhost:3000/insertPich`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(newPayload),
+    })
+    if (!response.ok) {
+      const errorData = response.json();
+      const errorMessage = errorData.response;
+      throw new Error(errorMessage);
+    }
+
+    const responseData = await response.json();
+    const finalData = responseData.response;
+
+    if (finalData.status !== 200) {
+      console.log(finalData.message);
+    } else {
+      console.log("Success!", finalData);
+      return finalData;
+    }
+
+  } catch (error) {
+    console.error("Error Inserting PICH:", error);
+    return [];
+  }
+}
+const submitPichRequest = () => {
+  const finalPayload = {
+    pichDate: form.value.pichDate,
+    pichAmount: form.value.pichAmount,
+    pitchMaturityDate: form.value.maturity,
+    tenorDays: form.value.tenor,
+    paymentModeId: form.value.paymentMode,
+    pswProfileStatus: "Active",
+    exporterName: customer.value.acTitle,
+    pitchStatusId: 1,
+    docId: form.value.docId,
+    pswLogId: 1,
+    accountId: selectedAccountDetails?.selectedAccountId ? selectedAccountDetails.selectedAccountId : "",    //to be conf
+    consigneeId: form.value.consigneeId,
+    pichRequestTypeId: 1,
+    currencyId: form.value.currencyId,
+    consigneePassportNo: form.value.passportNo,
+    consigneeIdenNo: form.value.idNo,
+    portId: form.value.portOfDesc,
+    authorizedPersons: authorizedList.value,
+    tradeItems: itemList.value,
+    postedBy: userDetails?.payload?.userName ? userDetails?.payload?.userName : "",
+    accountNo: selectedAccountNum!=""?selectedAccountNum : ""
+  }
+  if (
+    finalPayload.pichDate && finalPayload.pichDate.trim() !== '' &&
+    finalPayload.pichAmount != null && String(finalPayload.pichAmount).trim() !== '' &&
+    finalPayload.pitchMaturityDate && finalPayload.pitchMaturityDate.trim() !== '' &&
+    finalPayload.tenorDays != null && String(finalPayload.tenorDays).trim() !== '' &&
+    finalPayload.exporterName && finalPayload.exporterName.trim() !== '' &&
+    finalPayload.accountId !== '' &&
+    finalPayload.consigneeId != null && String(finalPayload.consigneeId).trim() !== '' &&
+    finalPayload.currencyId != null && String(finalPayload.currencyId).trim() !== '' &&
+    finalPayload.consigneePassportNo && finalPayload.consigneePassportNo.trim() !== '' &&
+    finalPayload.consigneeIdenNo && finalPayload.consigneeIdenNo.trim() !== '' &&
+    finalPayload.portId != null && String(finalPayload.portId).trim() !== '' &&
+    Array.isArray(finalPayload.authorizedPersons) && finalPayload.authorizedPersons.length > 0 &&
+    Array.isArray(finalPayload.tradeItems) && finalPayload.tradeItems.length > 0 &&
+    finalPayload.postedBy !== ''&&
+    finalPayload.accountNo !="" &&
+    finalPayload.docId != null && String(finalPayload.docId).trim() !== ''
+  ) {
+    console.log("All essential fields are valid", finalPayload);
+    InsertPich(finalPayload);
+  } else {
+    console.log("Some essential fields are missing or empty");
+  }
+
+}
+
+
+</script>
